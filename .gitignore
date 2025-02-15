@@ -4,3 +4,5 @@
 *.exe
 output/
 .vscode
+temp/
+bin/
