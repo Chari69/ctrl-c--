@@ -1,111 +1,89 @@
 #include <iostream>
 using namespace std;
 
-const int tam_alternativa = 8;
+// VARIABLES
+bool debug = false; 
+int pos_caballo_x = 0;
+int pos_caballo_y = 0;
+const int tam_tablero = 8;
+const int tam_alternativas = 8;
 
-int alternativas_x[tam_alternativa] = {2, 2, -2, -2, 1, 1, -1, -1};
-int alternativas_y[tam_alternativa] = {1, -1, 1, -1, 2, -2, 2, -2};
-
+int alternativas_x[tam_alternativas] = {2, 1, -1, -2, -2, -1, 1, 2};
+int alternativas_y[tam_alternativas] = {1, 2, 2, 1, -1, -2, -2, -1};
+int tablero[tam_tablero][tam_tablero];
 bool encontrado = false;
 
-int tablero[tam_alternativa][tam_alternativa];
-
-struct Caballo {
-    int x = 2;
-    int y = 3;
-    char nombre = 'C';
-
-    int x_old = 0;
-    int y_old = 0;
-};
-
-Caballo caballo;
-
-void imprimirTablero() {
-    for (int i = 0; i < tam_alternativa; i++) {
-        for (int j = 0; j < tam_alternativa; j++) {
-            if (caballo.x == i && caballo.y == j) {
-                cout << caballo.nombre << " ";
-            } else {
-                cout << tablero[i][j] << " ";
-            }
-        }
-        cout << endl;
+void imprimirTablero(int filas, int columnas) {
+    cout << "Tablero:" << endl;
+    for (int k = 0; k < filas * columnas; k++) {
+        int i = k / filas; 
+        int j = k % columnas; 
+        cout << tablero[i][j] << "  ";
+        tablero[i][j] >= 10 ? cout << " " : cout << "  "; 
+        if (j == columnas - 1) cout << endl;
     }
 }
 
-// OPTIMIZAR ESTO, ES UNA PUTA MIERDA
 void inicializarTablero() {
-    for (int i = 0; i < tam_alternativa; i++) {
-        for (int j = 0; j < tam_alternativa; j++) {
-            tablero[i][j] = 0;
-        }
+    for (int k = 0; k < tam_tablero * tam_tablero; k++) {
+        int i = k / tam_tablero; 
+        int j = k % tam_tablero;
+        tablero[i][j] = 0; 
     }
-    imprimirTablero();
 }
 
-void deshacerAlternativa(Caballo &caballo) {
-    tablero[caballo.x][caballo.y] = 0;
-    caballo.x = caballo.x_old;
-    caballo.y = caballo.y_old;
+void deshacerAlternativa(int x, int y) {
+    tablero[x][y] = 0;
 }
 
 bool alternativaValida(int x, int y) {
-    if(x >= tam_alternativa || y >= tam_alternativa || (x < 0 || y < 0)) {
+    if(x >= tam_tablero || y >= tam_tablero || x < 0 || y < 0) {
         return false;
-    } else {
-        return true;
-    }
+    } 
+
+    if (tablero[x][y] != 0) {
+        return false;
+    } 
+
+    return true;
 }
 
-void aplicarAlternativa(int x, int y) {
-    caballo.x = x;
-    caballo.y = y;
-    tablero[x][y] = 1;
-    cout << "Alternativa aplicada: " << caballo.x << ", " << caballo.y << endl;
+void aplicarAlternativa(int x, int y, int paso) {
+    tablero[x][y] = paso;
 }
 
-bool esSolucion(int x, int y) {
-    int contador = 0;
-    for (int i = 0; i < tam_alternativa; i++) {
-        for (int j = 0; j < tam_alternativa; j++) {
-            if (tablero[i][j] == 1) {
-                contador++;
-            }
-        }
-    }
-    if (contador == tam_alternativa * tam_alternativa) {
+bool esSolucion(int paso) {
+    if(paso == (tam_tablero * tam_tablero) - 1) {
         return true;
     } else {
         return false;
     }
 }
 
+void backtracking(int c_x, int c_y, int paso) {
+    int i = 0;
 
-void backtracking(int paso = 0, int i = 0, int j = 0) {
+    // Movimientos posibles del caballo = 8
     while (i < 8 /* && !encontrado*/) {
-        caballo.x_old = caballo.x;
-        caballo.y_old = caballo.y;
-        int nueva_x = caballo.x + alternativas_x[i];
-        int nueva_y = caballo.y + alternativas_y[i];
+        int nueva_x = c_x + alternativas_x[i];
+        int nueva_y = c_y + alternativas_y[i]; 
 
-        cout << "Paso numero:" << endl;
-
-        imprimirTablero();
-
+        if(debug) imprimirTablero(tam_tablero, tam_tablero);
 
         if(alternativaValida(nueva_x, nueva_y)) {
-            aplicarAlternativa(nueva_x, nueva_y);
+            aplicarAlternativa(nueva_x, nueva_y, paso + 1);
 
-            if(esSolucion(nueva_x, nueva_y)) {
+            if(esSolucion(paso)) {
+                imprimirTablero(tam_tablero, tam_tablero);
+                cout << "Solucion encontrada" << endl << "Paso: " << paso << endl;
                 encontrado = true;
             } else {
-                backtracking(paso + 1);
+                if(debug) imprimirTablero(tam_tablero, tam_tablero);
+                backtracking(nueva_x, nueva_y, paso + 1);
             }
 
-
             if(!encontrado) {
-                deshacerAlternativa(caballo);
+                deshacerAlternativa(nueva_x, nueva_y);
             }
         }
         i++;
@@ -113,7 +91,9 @@ void backtracking(int paso = 0, int i = 0, int j = 0) {
 }
 
 int main() {
-
     inicializarTablero();
-    backtracking(0);
+    tablero[pos_caballo_y][pos_caballo_x] = 1;
+    imprimirTablero(tam_tablero, tam_tablero);
+    backtracking(pos_caballo_y, pos_caballo_x, 1); // Lo inicio en en paso = 1, ya que la posicion inicial ya es el primer paso.
+    return 0;
 }
